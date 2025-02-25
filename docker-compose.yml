@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/server.Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/app/models
+    command: --rounds 10 --min-clients 3
+
+  client1:
+    build:
+      context: .
+      dockerfile: docker/client.Dockerfile
+    volumes:
+      - ./data/Client 1:/app/data
+      - ./data/Standard Scaler:/app/scaler
+    depends_on:
+      - server
+    command: --client-id 1 --server-address server:8080 --data-path /app/data --scaler-path /app/scaler/standard_scaler_new.joblib
+
+  client2:
+    build:
+      context: .
+      dockerfile: docker/client.Dockerfile
+    volumes:
+      - ./data/Client 2:/app/data
+      - ./data/Standard Scaler:/app/scaler
+    depends_on:
+      - server
+    command: --client-id 2 --server-address server:8080 --data-path /app/data --scaler-path /app/scaler/standard_scaler_new.joblib
+
+  client3:
+    build:
+      context: .
+      dockerfile: docker/client.Dockerfile
+    volumes:
+      - ./data/Client 3:/app/data
+      - ./data/Standard Scaler:/app/scaler
+    depends_on:
+      - server
+    command: --client-id 3 --server-address server:8080 --data-path /app/data --scaler-path /app/scaler/standard_scaler_new.joblib
