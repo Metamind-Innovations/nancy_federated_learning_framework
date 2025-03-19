@@ -3,6 +3,7 @@ import flwr as fl
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Union
 from ..model.neural_network import create_model
+import mlflow
 
 
 class SaveModelStrategy(fl.server.strategy.FedAdagrad):
@@ -42,33 +43,42 @@ class SaveModelStrategy(fl.server.strategy.FedAdagrad):
             try:
                 print(f"Attempting to save model to {self.output_path}...")
                 
-                
                 model_path = self.output_path
                 if not model_path.endswith('.keras') and not model_path.endswith('.h5'):
                     model_path = f"{model_path}.keras"
                 
-                
                 aggregated_weights = fl.common.parameters_to_ndarrays(aggregated_parameters)
                 
-                
                 model = create_model(input_shape=self.input_shape, num_classes=self.num_classes)
-                
-                
                 model.set_weights(aggregated_weights)
                 
-                
                 os.makedirs(os.path.dirname(model_path), exist_ok=True)
-                
-                
                 model.save(model_path)
                 print(f"SUCCESS: Model saved to {model_path}")
+                
+                # Save to MLflow
+                mlflow.set_tracking_uri("http://localhost:5000")  # Use local MLflow server
+                with mlflow.start_run() as run:
+                    mlflow.keras.log_model(
+                        model,
+                        "model",
+                        registered_model_name="nancy_federated_model"
+                    )
+                    if metrics:
+                        mlflow.log_metrics(metrics)
+                    mlflow.log_params({
+                        "input_shape": self.input_shape,
+                        "num_classes": self.num_classes,
+                        "num_rounds": self.num_rounds
+                    })
+                print("SUCCESS: Model logged and registered to MLflow")
             except Exception as e:
                 print(f"ERROR saving model: {e}")
                 import traceback
                 traceback.print_exc()
         
         return aggregated_parameters, metrics
-    
+        
     def aggregate_evaluate(
         self,
         server_round: int,

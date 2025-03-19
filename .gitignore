@@ -1,4 +1,5 @@
 venv/
+mlruns/
 data/Client */*
 data/Standard Scaler/*
 models/final_model.keras
